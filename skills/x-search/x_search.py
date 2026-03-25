@@ -23,10 +23,9 @@ except ImportError:
     sys.exit(1)
 
 API_URL = "https://api.x.ai/v1/responses"
-# "grok-4" is xAI's alias for the latest stable grok-4 model.
-# Override with XAI_MODEL env var to pin a specific version, e.g.:
-#   export XAI_MODEL=grok-4-1-fast
-MODEL = os.environ.get("XAI_MODEL", "grok-4")
+# Default model. Override with XAI_MODEL env var to pin a specific version, e.g.:
+#   export XAI_MODEL=grok-4
+MODEL = os.environ.get("XAI_MODEL", "grok-4-1-fast-reasoning")
 
 # Languages where the original post is typically already in that language —
 # skip the translation field to avoid redundancy.
