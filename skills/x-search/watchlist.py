@@ -68,6 +68,8 @@ def build_base_args(args) -> list[str]:
     base = ["python3", SCRIPT, "--lang", args.lang]
     if args.output:
         base += ["--output", args.output]
+    if args.progress_only:
+        base += ["--progress-only"]
     return base
 
 
@@ -130,6 +132,8 @@ def main():
     parser.add_argument("--type", dest="post_type", default=None,
                         choices=["post", "reply", "all"],
                         help="Post type filter for account mode")
+    parser.add_argument("--progress-only", action="store_true",
+                        help="Pass --progress-only to x_search.py (one-line stdout per account)")
     args = parser.parse_args()
 
     config = load_config(args.config)

@@ -13,8 +13,16 @@ Usage:
 import os
 import re
 import sys
+import time
 import argparse
+import warnings
 from datetime import datetime, timezone, timedelta
+
+try:
+    from urllib3.exceptions import NotOpenSSLWarning
+    warnings.filterwarnings("ignore", category=NotOpenSSLWarning)
+except ImportError:
+    pass
 
 try:
     import requests
@@ -54,12 +62,28 @@ def call_grok(prompt: str, tools: list = None) -> str:
         "tools": tools or [{"type": "x_search"}],
         "input": [{"role": "user", "content": prompt}],
     }
-    resp = requests.post(API_URL, headers=headers, json=payload, timeout=120)
-    if not resp.ok:
-        print(f"API error {resp.status_code}: {resp.text}", file=sys.stderr)
-    resp.raise_for_status()
-    data = resp.json()
+    last_exc = None
+    resp = None
+    for attempt in range(3):
+        try:
+            resp = requests.post(API_URL, headers=headers, json=payload, timeout=120)
+            if resp.ok:
+                break
+            print(f"API error {resp.status_code} (attempt {attempt+1}/3): {resp.text}", file=sys.stderr)
+            if resp.status_code < 500:
+                resp.raise_for_status()  # 4xx — no retry
+            if attempt < 2:
+                time.sleep(2 ** attempt * 5)  # 5s, 10s
+        except requests.exceptions.RequestException as e:
+            last_exc = e
+            if attempt < 2:
+                time.sleep(2 ** attempt * 5)
+    else:
+        if last_exc:
+            raise last_exc
+        resp.raise_for_status()
 
+    data = resp.json()
     for item in data.get("output", []):
         if item.get("type") == "message":
             for content in item.get("content", []):
@@ -107,12 +131,6 @@ def _resolve_output_path(output: str, filename: str) -> str:
         path = os.path.join(path, filename)
     else:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-
-    # Avoid silent overwrite: add HHmm suffix if file already exists
-    if os.path.exists(path):
-        base, ext = os.path.splitext(path)
-        suffix = datetime.now(timezone.utc).strftime("%H%M")
-        path = f"{base}-{suffix}{ext}"
 
     return path
 
@@ -256,10 +274,12 @@ def search_accounts(accounts: list[str], time_range: str = None,
 
     tool: dict = {
         "type": "x_search",
-        "allowed_x_handles": handles,  # TODO: verify actual API max
+        "allowed_x_handles": handles,
+        "max_search_results": 50,
     }
     if time_range:
         tool["from_date"] = _parse_time_range(time_range)
+        tool["to_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     include_translation = lang.lower() not in SKIP_TRANSLATION_LANGS
 
@@ -382,8 +402,13 @@ def main():
     )
     parser.add_argument(
         "--output", "-o", default=None, metavar="PATH",
-        help="Save output to file. Pass a directory for auto-naming, "
-             "or a full path. Existing files get a time suffix to avoid overwrite.",
+        help="Save output to file. Pass a directory for auto-naming, or a full path. "
+             "Same-day runs overwrite the existing file.",
+    )
+    parser.add_argument(
+        "--progress-only", action="store_true",
+        help="Print only a one-line summary to stdout (for automated pipelines). "
+             "Full Markdown is still written to --output.",
     )
     sub = parser.add_subparsers(dest="mode", required=True)
 
@@ -419,12 +444,17 @@ def main():
     elif args.mode == "topic":
         result = search_topic(args.topic, lang=args.lang)
 
-    print(result)
-
     if args.output:
         filename = _auto_filename(args.mode, args)
         path = _resolve_output_path(args.output, filename)
         _save(result, path)
+        if args.progress_only:
+            post_count = result.count("\n## ")
+            print(f"[x_search] {args.mode} → {os.path.basename(path)} ({post_count} posts)")
+            return
+
+    if not args.progress_only:
+        print(result)
 
 
 if __name__ == "__main__":
