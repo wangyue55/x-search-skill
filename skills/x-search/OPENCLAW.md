@@ -12,6 +12,11 @@ Use OpenClaw's built-in cron scheduler to run x-search automatically on a schedu
 
 Always use `--session isolated` for scheduled tasks — each run gets its own sandboxed session.
 
+For watchlist runs, add `--progress-only` to prevent full Markdown from being injected into the agent context (significantly reduces token consumption):
+```bash
+python3 watchlist.py --time 24h --lang zh --output ~/obsidian/X/ --progress-only
+```
+
 ---
 
 ## Scenario 1: Daily account monitoring

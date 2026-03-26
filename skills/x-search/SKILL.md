@@ -24,9 +24,9 @@ export XAI_API_KEY=your_key_here
 
 Get your API key at **x.ai/api** (xAI developer console).
 
-Default model is `grok-4` (xAI alias → always latest stable). To pin a specific version:
+Default model is `grok-4-1-fast-reasoning`. To override:
 ```bash
-export XAI_MODEL=grok-4-1-fast
+export XAI_MODEL=grok-4
 ```
 
 Install dependency if needed:
@@ -54,7 +54,9 @@ When `--lang en`, the translation field is omitted since the original is already
 `--output` saves the result to a Markdown file (stdout is preserved):
 - Pass a **directory** → auto-named file: `karpathy-2026-03-22.md`, `trends-AI-2026-03-22.md`, etc.
 - Pass a **full path** → saved directly to that path
-- If the file already exists, a time suffix is added automatically: `karpathy-2026-03-22-0830.md`
+- Same-day runs overwrite the existing file (no duplicate accumulation)
+
+`--progress-only` suppresses full Markdown on stdout — prints one summary line instead. Use with `--output` in automated pipelines (watchlist, cron) to avoid injecting large outputs into the agent context.
 
 ### Natural Language
 - "Search X for @elonmusk's posts in the last 24 hours"

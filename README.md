@@ -11,8 +11,9 @@ Searches account feeds, trending topics, and topic discussions — outputs Obsid
 - **Topic mode** — hot discussions around any topic
 - **Multi-language output** — summaries, translations, and keyword explanations in any language (`--lang zh` by default; `--lang en` skips translation)
 - **Obsidian-ready output** — structured Markdown with timestamps, original text, translation, summary, and keywords
-- **File output** — auto-named with date stamps, collision-safe
+- **File output** — auto-named with date stamps, same-day runs overwrite (no duplicate accumulation)
 - **Watchlist** — batch-run all your monitored accounts, trends, and topics from a YAML config
+- **Pipeline-friendly** — `--progress-only` suppresses full Markdown stdout for use in cron / automated contexts
 - **OpenClaw scheduling** — run on a cron schedule and push results to Telegram, Slack, or Discord
 
 ## Requirements
