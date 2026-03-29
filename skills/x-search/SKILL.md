@@ -5,10 +5,14 @@ trigger: Use when user wants to search X or Twitter, check someone's posts on X,
 user-invocable: true
 metadata:
   openclaw:
+    version: "1.0.0"
+    author: wangyue55
+    license: MIT
+    source: https://github.com/wangyue55/x-search-skill
     requires:
       - XAI_API_KEY
     install:
-      pip: requests
+      pip: requests pyyaml
 ---
 
 # X Search
